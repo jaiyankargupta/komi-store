@@ -9,7 +9,10 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+
+private val EXPRESSIVE_CARD_SHAPE = RoundedCornerShape(32.dp)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -28,13 +31,15 @@ fun ExpressiveCard(
     when {
         onClick != null && onLongClick != null -> {
             // ElevatedCard's built-in `onClick` doesn't expose long-press;
-            // route both gestures through `combinedClickable` on the modifier
-            // instead so callers can attach a hide-menu without sacrificing
-            // the tap ripple.
+            // route both gestures through `combinedClickable`. Clip the
+            // modifier chain to the card shape FIRST so the ripple
+            // respects the 32.dp rounded corners — without the clip the
+            // ripple draws as a square overlapping the card edges.
             ElevatedCard(
                 modifier =
                     modifier
                         .fillMaxWidth()
+                        .clip(EXPRESSIVE_CARD_SHAPE)
                         .combinedClickable(
                             onClick = onClick,
                             onLongClick = onLongClick,
@@ -43,7 +48,7 @@ fun ExpressiveCard(
                     CardDefaults.elevatedCardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     ),
-                shape = RoundedCornerShape(32.dp),
+                shape = EXPRESSIVE_CARD_SHAPE,
                 content = { content() },
             )
         }
@@ -56,7 +61,7 @@ fun ExpressiveCard(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     ),
                 onClick = onClick,
-                shape = RoundedCornerShape(32.dp),
+                shape = EXPRESSIVE_CARD_SHAPE,
                 content = { content() },
             )
         }
@@ -68,7 +73,7 @@ fun ExpressiveCard(
                     CardDefaults.elevatedCardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     ),
-                shape = RoundedCornerShape(32.dp),
+                shape = EXPRESSIVE_CARD_SHAPE,
                 content = { content() },
             )
         }

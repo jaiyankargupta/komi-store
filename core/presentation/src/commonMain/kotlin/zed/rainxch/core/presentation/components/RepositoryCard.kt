@@ -29,10 +29,13 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +78,11 @@ import zed.rainxch.githubstore.core.presentation.res.self_owned_badge
 import zed.rainxch.githubstore.core.presentation.res.share_repository
 import zed.rainxch.githubstore.core.presentation.res.update_available
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
+@OptIn(
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalLayoutApi::class,
+    ExperimentalMaterial3Api::class,
+)
 @Composable
 fun RepositoryCard(
     discoveryRepositoryUi: DiscoveryRepositoryUi,
@@ -93,18 +100,13 @@ fun RepositoryCard(
         label = "seen_content_alpha",
     )
 
-    var hideMenuExpanded by remember { mutableStateOf(false) }
+    var showHideSheet by remember { mutableStateOf(false) }
 
     ExpressiveCard(
         onClick = onClick,
-        onLongClick = onHideClick?.let { { hideMenuExpanded = true } },
+        onLongClick = onHideClick?.let { { showHideSheet = true } },
         modifier = modifier,
     ) {
-        // Outer Box (no alpha) hosts both the dimmed visual content and the
-        // DropdownMenu. Putting the menu inside the alpha Box made the
-        // popup inherit `contentAlpha = 0.55f` whenever the repo was
-        // already seen, dimming the menu surface.
-        Box {
         Box(modifier = Modifier.alpha(contentAlpha)) {
             if (discoveryRepositoryUi.isFavourite) {
                 Icon(
@@ -353,27 +355,66 @@ fun RepositoryCard(
                 }
             }
         }
+    }
 
-        if (onHideClick != null) {
-            DropdownMenu(
-                expanded = hideMenuExpanded,
-                onDismissRequest = { hideMenuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.hide_repository)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.VisibilityOff,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        hideMenuExpanded = false
-                        onHideClick()
-                    },
-                )
-            }
-        }
+    if (onHideClick != null && showHideSheet) {
+        HideRepositoryBottomSheet(
+            repoName = discoveryRepositoryUi.repository.fullName,
+            onDismiss = { showHideSheet = false },
+            onConfirmHide = {
+                showHideSheet = false
+                onHideClick()
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HideRepositoryBottomSheet(
+    repoName: String,
+    onDismiss: () -> Unit,
+    onConfirmHide: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+        ) {
+            Text(
+                text = repoName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(Res.string.hide_repository))
+                },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.VisibilityOff,
+                        contentDescription = null,
+                    )
+                },
+                colors =
+                    ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
+                modifier = Modifier.clickable(onClick = onConfirmHide),
+            )
         }
     }
 }
