@@ -9,7 +9,17 @@ class AndroidFileLocationsProvider(
     private val context: Context,
 ) : zed.rainxch.core.data.services.FileLocationsProvider {
     @Volatile
-    private var cachedDownloadsDir: String? = null
+    private var _cachedDownloadsDir: String? = null
+
+    // ... method using this field ...
+    
+        _cachedDownloadsDir?.let { return it }
+        synchronized(this) {
+            _cachedDownloadsDir?.let { return it }
+            val resolved = resolveDownloadsDir()
+            _cachedDownloadsDir = resolved
+            return resolved
+        }
 
     override fun appDownloadsDir(): String {
         cachedDownloadsDir?.let { return it }
