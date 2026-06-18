@@ -11,10 +11,11 @@ import zed.rainxch.details.presentation.model.SupportedLanguages
 fun ProvideLanguageLinkInterceptor(
     onTranslate: (String) -> Unit,
     onClearTranslation: (() -> Unit)? = null,
+    onOpenInternalMarkdown: ((String) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val defaultUriHandler = LocalUriHandler.current
-    val customUriHandler = remember(defaultUriHandler, onTranslate, onClearTranslation) {
+    val customUriHandler = remember(defaultUriHandler, onTranslate, onClearTranslation, onOpenInternalMarkdown) {
         object : UriHandler {
             override fun openUri(uri: String) {
                 if (Regex("""(?i)README\.md(?:[#?].*)?$""").find(uri) != null) {
@@ -45,6 +46,15 @@ fun ProvideLanguageLinkInterceptor(
                         return
                     }
                 }
+                
+                if (onOpenInternalMarkdown != null) {
+                    val isInternalMarkdown = Regex("""(?i)^https://(?:raw\.githubusercontent\.com|github\.com)/[^/]+/[^/]+/(?:blob/)?[^/]+/.+\.md(?:[#?].*)?$""").find(uri) != null
+                    if (isInternalMarkdown) {
+                        onOpenInternalMarkdown.invoke(uri)
+                        return
+                    }
+                }
+
                 defaultUriHandler.openUri(uri)
             }
         }
